@@ -1,0 +1,50 @@
+networks:
+    nodejs:
+        driver: bridge
+services:
+    npm:
+        image: node:current-alpine3.16
+        volumes:
+            - ./:/var/www/html/server
+        entrypoint: ['npm']
+        working_dir: /var/www/html/server
+        networks:
+            - nodejs
+
+    server:
+        image: node:current-alpine3.16
+        volumes:
+            - ./:/var/www/html/server
+        networks:
+            - nodejs
+        ports:
+            - '3001:3001'
+        expose:
+            - '3001'
+        environment:
+            PORT: 3001
+            BASE_URL: http://localhost
+        working_dir: /var/www/html/server
+        entrypoint: ['npm', 'run', 'dev', '--host', '0.0.0.0']
+        depends_on:
+            - redis-server
+
+    redis-gui:
+        image: redislabs/redisinsight:latest
+        ports:
+            - '8001:8001'
+        expose:
+            - '8001'
+        volumes:
+            - ./.redis:/data
+        depends_on:
+            - redis-server
+        networks:
+            - nodejs
+
+    redis-server:
+        image: redis:latest
+        volumes:
+            - ./.redis:/data
+        networks:
+            - nodejs
